@@ -83,19 +83,17 @@ export default async function main({ req, res, context }) {
       ]
     );
 
-    const Count = existingComments.total
-    context.log(Count)
+    const commentsCount = existingComments.total;
+    context.log(commentsCount);
 
-    await updatePost(postId, { commentsCount: Count })(
-      await this.databases.updateDocument(
-        conf.appwriteDatabaseid,
-        conf.appwritePostCollectionid,
-        postId,
-        {
-          commentsCount,
-        }
-      )
-    )
+    await databases.updateDocument(
+      appwriteDatabaseId,
+      appwritePostCollectionId,
+      postId,
+      {
+        commentsCount,
+      }
+    );
 
     return res.json({
       success: true,
