@@ -7,59 +7,61 @@ const appwriteFunctionApiEndpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
 const appwriteFunctionProjectId = process.env.APPWRITE_FUNCTION_PROJECT_ID;
 
 export default async function main({ req, res, context }) {
-  // Ensure only POST requests
-  if (req.method !== 'POST') {
-    return res.json({
-      success: false,
-      error: 'Method Not Allowed. Only POST requests are accepted.'
-    });
-  }
-
-  // Extract dynamic API key and user ID from headers
-  const appwriteHeaderApiKey = req.headers['x-appwrite-key'] || '';
-  const authorId = req.headers['x-appwrite-user-id'];
-
-  // Parse JSON body safely
-  let body;
   try {
-    const rawBody = req.body;
-    body = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
-  } catch (err) {
-    return res.json({ success: false, error: 'Invalid JSON body.' });
-  }
+    // Ensure only POST requests
+    if (req.method !== 'POST') {
+      return res.json({
+        success: false,
+        error: 'Method Not Allowed. Only POST requests are accepted.'
+      });
+    }
 
-  const { postId, commentId = null, content } = body;
+    // Extract dynamic API key and user ID from headers
+    const appwriteHeaderApiKey = req.headers['x-appwrite-key'] || '';
+    const authorId = req.headers['x-appwrite-user-id'];
 
-  // Validate required fields
-  if (!authorId || !postId || !content) {
-    return res.json({
-      success: false,
-      error: 'Missing field: authorId, postId, and content are required.'
-    });
-  }
+    // Parse JSON body safely
+    let body;
+    try {
+      const rawBody = req.body;
+      body = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
+    } catch (err) {
+      return res.json({ success: false, error: 'Invalid JSON body.' });
+    }
 
-  // Initialize Appwrite SDK
-  const client = new Client()
-    .setEndpoint(appwriteFunctionApiEndpoint)
-    .setProject(appwriteFunctionProjectId)
-    .setKey(appwriteHeaderApiKey);
+    const { postId, commentId = null, content } = body;
 
-  const databases = new Databases(client);
+    // Validate required fields
+    if (!authorId || !postId || !content) {
+      return res.json({
+        success: false,
+        error: 'Missing field: authorId, postId, and content are required.'
+      });
+    }
 
-  try {
+    // Initialize Appwrite SDK
+    const client = new Client()
+      .setEndpoint(appwriteFunctionApiEndpoint)
+      .setProject(appwriteFunctionProjectId)
+      .setKey(appwriteHeaderApiKey);
+
+    const databases = new Databases(client);
+
     // Verify that the post exists
-    const existingPost = await databases.listDocuments(
+    const existingPostResponse = await databases.listDocuments(
       appwriteDatabaseId,
       appwritePostCollectionId,
       [Query.equal('$id', postId)]
     );
 
-    if (existingPost.total === 0) {
+    if (existingPostResponse.total === 0) {
       return res.json({
         success: false,
         error: 'Post not found.'
       });
     }
+
+    const existingPost = existingPostResponse.documents[0];
 
     // Create the comment
     const created = await databases.createDocument(
@@ -84,13 +86,13 @@ export default async function main({ req, res, context }) {
     );
 
     const commentsCount = existingComments.total;
-    context.log(commentsCount);
 
     await databases.updateDocument(
       appwriteDatabaseId,
       appwritePostCollectionId,
       postId,
       {
+        ...existingPost,
         commentsCount,
       }
     );
@@ -100,7 +102,6 @@ export default async function main({ req, res, context }) {
       commentAdded: created,
     });
   } catch (error) {
-    context.error('Error executing function:', error);
-    return res.json({ success: false, error: error.message });
+    return res.json({ success: false, error: error.message || 'Unknown error' });
   }
 }
