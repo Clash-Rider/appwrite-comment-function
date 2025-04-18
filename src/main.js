@@ -8,7 +8,6 @@ const appwriteFunctionProjectId = process.env.APPWRITE_FUNCTION_PROJECT_ID;
 
 export default async function main({ req, res, context }) {
   try {
-    // Ensure only POST requests
     if (req.method !== 'POST') {
       return res.json({
         success: false,
@@ -16,11 +15,9 @@ export default async function main({ req, res, context }) {
       });
     }
 
-    // Extract dynamic API key and user ID from headers
     const appwriteHeaderApiKey = req.headers['x-appwrite-key'] || '';
     const authorId = req.headers['x-appwrite-user-id'];
 
-    // Parse JSON body safely
     let body;
     try {
       const rawBody = req.body;
@@ -31,7 +28,6 @@ export default async function main({ req, res, context }) {
 
     const { postId, commentId = null, content } = body;
 
-    // Validate required fields
     if (!authorId || !postId || !content) {
       return res.json({
         success: false,
@@ -39,7 +35,6 @@ export default async function main({ req, res, context }) {
       });
     }
 
-    // Initialize Appwrite SDK
     const client = new Client()
       .setEndpoint(appwriteFunctionApiEndpoint)
       .setProject(appwriteFunctionProjectId)
@@ -47,7 +42,6 @@ export default async function main({ req, res, context }) {
 
     const databases = new Databases(client);
 
-    // Verify that the post exists
     const existingPostResponse = await databases.listDocuments(
       appwriteDatabaseId,
       appwritePostCollectionId,
@@ -63,7 +57,6 @@ export default async function main({ req, res, context }) {
 
     const existingPost = existingPostResponse.documents[0];
 
-    // Create the comment
     const created = await databases.createDocument(
       appwriteDatabaseId,
       appwriteCommentCollectionId,
@@ -76,7 +69,8 @@ export default async function main({ req, res, context }) {
       }
     );
 
-    const existingComments = await databases.listDocuments(
+    // Refetch top-level comments after creating the new one
+    const updatedComments = await databases.listDocuments(
       appwriteDatabaseId,
       appwriteCommentCollectionId,
       [
@@ -90,9 +84,7 @@ export default async function main({ req, res, context }) {
       appwritePostCollectionId,
       postId,
       {
-        userId: existingPost.userId,
-        title: existingPost.title,
-        commentsCount: existingComments.total,
+        commentsCount: updatedComments.total
       }
     );
 
