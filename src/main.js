@@ -9,7 +9,7 @@ const appwriteFunctionProjectId = process.env.APPWRITE_FUNCTION_PROJECT_ID;
 export default async function main({ req, res, context }) {
   // Ensure only POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({
+    return res.json({
       success: false,
       error: 'Method Not Allowed. Only POST requests are accepted.'
     });
@@ -25,14 +25,14 @@ export default async function main({ req, res, context }) {
     const rawBody = req.body;
     body = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
   } catch (err) {
-    return res.status(400).json({ success: false, error: 'Invalid JSON body.' });
+    return res.json({ success: false, error: 'Invalid JSON body.' });
   }
 
   const { postId, commentId = null, content } = body;
 
   // Validate required fields
   if (!authorId || !postId || !content) {
-    return res.status(400).json({
+    return res.json({
       success: false,
       error: 'Missing field: authorId, postId, and content are required.'
     });
@@ -55,7 +55,7 @@ export default async function main({ req, res, context }) {
     );
 
     if (existingPost.total === 0) {
-      return res.status(404).json({
+      return res.json({
         success: false,
         error: 'Post not found.'
       });
@@ -74,12 +74,12 @@ export default async function main({ req, res, context }) {
       }
     );
 
-    return res.status(200).json({
+    return res.json({
       success: true,
       commentAdded: created,
     });
   } catch (error) {
     console.error('Error executing function:', error);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.json({ success: false, error: error.message });
   }
 }
