@@ -85,15 +85,14 @@ export default async function main({ req, res, context }) {
       ]
     );
 
-    const commentsCount = existingComments.total;
-
     await databases.updateDocument(
       appwriteDatabaseId,
       appwritePostCollectionId,
       postId,
       {
-        ...existingPost,
-        commentsCount,
+        userId: existingPost.userId,
+        title: existingPost.title,
+        commentsCount: existingComments.total,
       }
     );
 
