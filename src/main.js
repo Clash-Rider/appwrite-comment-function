@@ -79,7 +79,6 @@ export default async function main({ req, res, context }) {
       appwriteCommentCollectionId,
       [
         Query.equal('postId', postId),
-        Query.notEqual('commentId', undefined)
       ]
     );
 
