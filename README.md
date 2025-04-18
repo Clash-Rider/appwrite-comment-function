@@ -1,48 +1,83 @@
-# ⚡ Node.js Starter Function
+# 📝 Appwrite Comment Function
 
-A simple starter function. Edit `src/main.js` to get started and create something awesome! 🚀
+This serverless function allows authenticated users to add comments to posts using [Appwrite](https://appwrite.io/). It checks the validity of the request, ensures the post exists, and stores the comment in the database.
 
-## 🧰 Usage
+---
 
-### GET /ping
+## 🌐 Endpoint
 
-- Returns a "Pong" message.
+This function is designed to be used as a POST request in a serverless environment with Appwrite.
 
-**Response**
+---
 
-Sample `200` Response:
+## 🛠 Environment Variables
 
-```text
-Pong
-```
+Make sure these environment variables are set in your Appwrite function settings:
 
-### GET, POST, PUT, PATCH, DELETE /
+| Variable Name                    | Description                                  |
+|----------------------------------|----------------------------------------------|
+| `APPWRITE_FUNCTION_API_ENDPOINT` | Your Appwrite API endpoint (e.g. `https://cloud.appwrite.io/v1`) |
+| `APPWRITE_FUNCTION_PROJECT_ID`   | Your Appwrite Project ID                     |
+| `DATABASE_ID`                    | ID of the target Appwrite database           |
+| `POST_COLLECTION_ID`             | Collection ID where posts are stored         |
+| `COMMENT_COLLECTION_ID`          | Collection ID where comments should be stored|
 
-- Returns a "Learn More" JSON response.
+---
 
-**Response**
+## 🔐 Required Headers
 
-Sample `200` Response:
+| Header                  | Description                       |
+|--------------------------|-----------------------------------|
+| `x-appwrite-key`         | Appwrite API key with proper permissions |
+| `x-appwrite-user-id`     | The ID of the currently authenticated user |
+
+---
+
+## 📦 Request
+
+- **Method:** `POST`
+- **Content-Type:** `application/json`
+- **Body Example:**
 
 ```json
 {
-  "motto": "Build like a team of hundreds_",
-  "learn": "https://appwrite.io/docs",
-  "connect": "https://appwrite.io/discord",
-  "getInspired": "https://builtwith.appwrite.io"
+  "postId": "example-post-id",
+  "commentId": "optional-comment-id",
+  "content": "This is a comment."
 }
-```
 
-## ⚙️ Configuration
+Success Response
+json
+Copy
+Edit
+{
+  "success": true,
+  "commentAdded": {
+    "commentId": "comment-id-or-null",
+    "postId": "example-post-id",
+    "authorId": "user-id",
+    "content": "This is a comment."
+  }
+}
 
-| Setting           | Value         |
-| ----------------- | ------------- |
-| Runtime           | Node (18.0)   |
-| Entrypoint        | `src/main.js` |
-| Build Commands    | `npm install` |
-| Permissions       | `any`         |
-| Timeout (Seconds) | 15            |
 
-## 🔒 Environment Variables
+Error Responses
+400 Bad Request
 
-No environment variables required.
+Missing required fields (postId, content, or authorId)
+
+404 Not Found
+
+Post with provided postId does not exist
+
+405 Method Not Allowed
+
+Request method is not POST
+
+502 Bad Gateway
+
+Failed to create comment document
+
+500 Internal Server Error
+
+Unexpected server error
