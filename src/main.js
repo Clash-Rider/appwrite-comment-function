@@ -83,17 +83,18 @@ export default async function main({ req, res, context }) {
       ]
     );
 
-    const commentsCount = existingComments.total
+    const Count = existingComments.total
+    context.log(Count)
 
-    await updatePost(postId, { commentsCount })(
+    await updatePost(postId, { commentsCount: Count })(
       await this.databases.updateDocument(
-      conf.appwriteDatabaseid,
-      conf.appwritePostCollectionid,
-      postId,
-      {
-        commentsCount,
-      }
-    )
+        conf.appwriteDatabaseid,
+        conf.appwritePostCollectionid,
+        postId,
+        {
+          commentsCount,
+        }
+      )
     )
 
     return res.json({
@@ -101,7 +102,7 @@ export default async function main({ req, res, context }) {
       commentAdded: created,
     });
   } catch (error) {
-    console.error('Error executing function:', error);
+    context.error('Error executing function:', error);
     return res.json({ success: false, error: error.message });
   }
 }
