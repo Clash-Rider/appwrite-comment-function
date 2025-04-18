@@ -84,7 +84,6 @@ export default async function main({ req, res, context }) {
     );
 
     context.log("Top-level comments count:", updatedComments.total);
-    context.log("Sample comment document:", updatedComments.documents[0]);
 
     await databases.updateDocument(
       appwriteDatabaseId,
@@ -101,7 +100,6 @@ export default async function main({ req, res, context }) {
       commentsCount: updatedComments.total
     });
   } catch (error) {
-    context.log("Error occurred:", error);
     return res.json({ success: false, error: error.message || 'Unknown error' });
   }
 }
