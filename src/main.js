@@ -6,7 +6,7 @@ const appwriteCommentCollectionId = process.env.COMMENT_COLLECTION_ID;
 const appwriteFunctionApiEndpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
 const appwriteFunctionProjectId = process.env.APPWRITE_FUNCTION_PROJECT_ID;
 
-export default async function main({ req, res, log, error }) {
+export default async function main({ req, res, context }) {
   // Ensure only POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({
