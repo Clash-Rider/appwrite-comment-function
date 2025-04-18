@@ -42,7 +42,7 @@ export default async function main({ req, res, context }) {
 
     const databases = new Databases(client);
 
-    context.log("Fetching post with ID:", postId);
+    console.log("Fetching post with ID:", postId);
     const existingPostResponse = await databases.listDocuments(
       appwriteDatabaseId,
       appwritePostCollectionId,
@@ -58,7 +58,7 @@ export default async function main({ req, res, context }) {
 
     const existingPost = existingPostResponse.documents[0];
 
-    context.log("Creating new comment:", { commentId, postId, authorId, content });
+    console.log("Creating new comment:", { commentId, postId, authorId, content });
     const created = await databases.createDocument(
       appwriteDatabaseId,
       appwriteCommentCollectionId,
@@ -73,7 +73,7 @@ export default async function main({ req, res, context }) {
 
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    context.log("Fetching top-level comments for post:", postId);
+    console.log("Fetching top-level comments for post:", postId);
     const updatedComments = await databases.listDocuments(
       appwriteDatabaseId,
       appwriteCommentCollectionId,
@@ -83,7 +83,8 @@ export default async function main({ req, res, context }) {
       ]
     );
 
-    context.log("Top-level comments count:", updatedComments.total);
+    console.log("Top-level comments count:", updatedComments.total);
+    console.log("Sample comment document:", updatedComments.documents[0]);
 
     await databases.updateDocument(
       appwriteDatabaseId,
@@ -100,6 +101,7 @@ export default async function main({ req, res, context }) {
       commentsCount: updatedComments.total
     });
   } catch (error) {
+    console.log("Error occurred:", error);
     return res.json({ success: false, error: error.message || 'Unknown error' });
   }
 }
