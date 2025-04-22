@@ -1,8 +1,9 @@
-import { Client, Users, Databases, Query } from 'node-appwrite';
+import { Client, Users, Databases, Query, Permission, Role } from 'node-appwrite';
 
 const appwriteDatabaseId = process.env.DATABASE_ID;
 const appwritePostCollectionId = process.env.POST_COLLECTION_ID;
 const appwriteCommentCollectionId = process.env.COMMENT_COLLECTION_ID;
+const appwriteNotificationCollectionId = process.env.NOTIFICATIONS_COLLECTION_ID;
 const appwriteFunctionApiEndpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
 const appwriteFunctionProjectId = process.env.APPWRITE_FUNCTION_PROJECT_ID;
 
@@ -56,7 +57,52 @@ export default async function main({ req, res, context }) {
       });
     }
 
-    const existingPost = existingPostResponse.documents[0];
+    const existingPostUserId = existingPostResponse.documents[0].userId;
+
+    //comment Notification
+    if (!commentId) {
+      try {
+        await databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
+          userId: existingPostUserId,
+          type: 'comment',
+          relatedUserId: authorId,
+          relatedPostId: postId,
+          seen: false
+        },
+          [
+            Permission.read(Role.user(existingPostUserId)),
+            Permission.update(Role.user(existingPostUserId)),
+            Permission.delete(Role.user(existingPostUserId)), // User followerId can delete this document
+          ]
+        )
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    //replay Notifications
+    if (commentId) {
+      const createReplyNotifications = existingComments.documents.map(doc =>
+        databases.createDocument(
+          appwriteDatabaseId,
+          appwriteNotificationCollectionId,
+          'unique()',
+          {
+            userId: doc.authorId,
+            type: 'reply',
+            relatedUserId: authorId,
+            relatedPostId: postId,
+            seen: false,
+          },
+          [
+            Permission.read(Role.user(doc.authorId)),
+            Permission.update(Role.user(doc.authorId)),
+            Permission.delete(Role.user(doc.authorId)),
+          ]
+        )
+      );
+      await Promise.all(createReplyNotifications);
+    }
 
     console.log("Creating new comment:", { commentId, postId, authorId, content });
     const created = await databases.createDocument(
