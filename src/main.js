@@ -91,7 +91,33 @@ export default async function main({ req, res, context }) {
         ]
       );
 
-      await existingComments.documents.map((document) => {
+      const parentComment = await databases.listDocuments(
+        appwriteDatabaseId,
+        appwriteCommentCollectionId,
+        [
+          Query.equal('$id', commentId),
+        ]
+      );
+
+      try {
+        databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
+          userId: parentComment.documents[0].authorId,
+          type: 'replay',
+          relatedUserId: authorId,
+          relatedPostId: postId,
+          seen: false
+        },
+          [
+            Permission.read(Role.user(parentComment.documents[0].authorId)),
+            Permission.update(Role.user(parentComment.documents[0].authorId)),
+            Permission.delete(Role.user(parentComment.documents[0].authorId)), // User followerId can delete this document
+          ]
+        )
+      } catch (error) {
+        console.log(error);
+      }
+
+      await existingComments.documents?.map((document) => {
         try {
           databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
             userId: document.authorId,
