@@ -82,26 +82,34 @@ export default async function main({ req, res, context }) {
 
     //replay Notifications
     if (commentId) {
-      const createReplyNotifications = existingComments.documents.map(doc =>
-        databases.createDocument(
-          appwriteDatabaseId,
-          appwriteNotificationCollectionId,
-          'unique()',
-          {
-            userId: doc.authorId,
-            type: 'reply',
+      const existingComments = await databases.listDocuments(
+        appwriteDatabaseId,
+        appwriteCommentCollectionId,
+        [
+          Query.equal('postId', postId),
+          Query.isNotNull("commentId")
+        ]
+      );
+
+      await existingComments.documents.map((document) => {
+        try {
+          databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
+            userId: document.authorId,
+            type: 'replay',
             relatedUserId: authorId,
             relatedPostId: postId,
-            seen: false,
+            seen: false
           },
-          [
-            Permission.read(Role.user(doc.authorId)),
-            Permission.update(Role.user(doc.authorId)),
-            Permission.delete(Role.user(doc.authorId)),
-          ]
-        )
-      );
-      await Promise.all(createReplyNotifications);
+            [
+              Permission.read(Role.user(document.authorId)),
+              Permission.update(Role.user(document.authorId)),
+              Permission.delete(Role.user(document.authorId)), // User followerId can delete this document
+            ]
+          )
+        } catch (error) {
+          console.log(error);
+        }
+      })
     }
 
     console.log("Creating new comment:", { commentId, postId, authorId, content });
