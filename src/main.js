@@ -67,6 +67,7 @@ export default async function main({ req, res, context }) {
           type: 'comment',
           relatedUserId: authorId,
           relatedPostId: postId,
+          commentText: content,
           seen: false
         },
           [
@@ -105,6 +106,7 @@ export default async function main({ req, res, context }) {
           type: 'replay',
           relatedUserId: authorId,
           relatedPostId: postId,
+          commentText: content,
           seen: false
         },
           [
@@ -124,6 +126,7 @@ export default async function main({ req, res, context }) {
             type: 'replay',
             relatedUserId: authorId,
             relatedPostId: postId,
+            commentText: content,
             seen: false
           },
             [
