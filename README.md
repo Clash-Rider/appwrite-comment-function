@@ -7,7 +7,6 @@ This serverless function allows authenticated users to add comments to posts usi
 ## 🌐 Endpoint
 
 This function is designed to be used as a POST request in a serverless environment with Appwrite.
-<!-- umm nothing -->
 ---
 
 ## 🛠 Environment Variables
