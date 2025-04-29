@@ -176,7 +176,6 @@ export default async function main({ req, res, context }) {
     );
 
     console.log("Top-level comments count:", updatedComments.total);
-    console.log("Sample comment document:", updatedComments.documents[0]);
 
     await databases.updateDocument(
       appwriteDatabaseId,
