@@ -3,6 +3,7 @@
 This serverless function allows authenticated users to add comments to posts using [Appwrite](https://appwrite.io/). It checks the validity of the request, ensures the post exists, and stores the comment in the database.
 
 ---
+<!-- a -->
 
 ## 🌐 Endpoint 
 
