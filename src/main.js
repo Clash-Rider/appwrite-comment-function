@@ -59,8 +59,10 @@ export default async function main({ req, res, context }) {
 
     const existingPostUserId = existingPostResponse.documents[0].userId;
 
+    const userIdArr = [authorId,]
+
     //comment Notification
-    if (!commentId) {
+    if (!commentId && !userIdArr.includes(existingPostUserId)) {
       try {
         await databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
           userId: existingPostUserId,
@@ -76,6 +78,7 @@ export default async function main({ req, res, context }) {
             Permission.delete(Role.user(existingPostUserId)), // User followerId can delete this document
           ]
         )
+        userIdArr.push(existingPostUserId)
       } catch (error) {
         console.log(error);
       }
@@ -88,6 +91,7 @@ export default async function main({ req, res, context }) {
         appwriteCommentCollectionId,
         [
           Query.equal('postId', postId),
+          Query.equal('$id', commentId),
           Query.isNotNull("commentId")
         ]
       );
@@ -100,29 +104,10 @@ export default async function main({ req, res, context }) {
         ]
       );
 
-      try {
-        databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
-          userId: parentComment.documents[0].authorId,
-          type: 'replay',
-          relatedUserId: authorId,
-          relatedPostId: postId,
-          commentText: content,
-          seen: false
-        },
-          [
-            Permission.read(Role.user(parentComment.documents[0].authorId)),
-            Permission.update(Role.user(parentComment.documents[0].authorId)),
-            Permission.delete(Role.user(parentComment.documents[0].authorId)), // User followerId can delete this document
-          ]
-        )
-      } catch (error) {
-        console.log(error);
-      }
-
-      await existingComments.documents?.map((document) => {
+      if (!userIdArr.includes(parentComment.documents[0].authorId)) {
         try {
-          databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
-            userId: document.authorId,
+          await databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
+            userId: parentComment.documents[0].authorId,
             type: 'replay',
             relatedUserId: authorId,
             relatedPostId: postId,
@@ -130,15 +115,40 @@ export default async function main({ req, res, context }) {
             seen: false
           },
             [
-              Permission.read(Role.user(document.authorId)),
-              Permission.update(Role.user(document.authorId)),
-              Permission.delete(Role.user(document.authorId)), // User followerId can delete this document
+              Permission.read(Role.user(parentComment.documents[0].authorId)),
+              Permission.update(Role.user(parentComment.documents[0].authorId)),
+              Permission.delete(Role.user(parentComment.documents[0].authorId)), // User followerId can delete this document
             ]
           )
+          userIdArr.push(parentComment.documents[0].authorId)
         } catch (error) {
           console.log(error);
         }
-      })
+      }
+
+      if (!userIdArr.includes(document.authorId)) {
+        await existingComments.documents?.map((document) => {
+          try {
+            databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
+              userId: document.authorId,
+              type: 'replay',
+              relatedUserId: authorId,
+              relatedPostId: postId,
+              commentText: content,
+              seen: false
+            },
+              [
+                Permission.read(Role.user(document.authorId)),
+                Permission.update(Role.user(document.authorId)),
+                Permission.delete(Role.user(document.authorId)), // User followerId can delete this document
+              ]
+            )
+            userIdArr.push(document.authorId)
+          } catch (error) {
+            console.log(error);
+          }
+        })
+      }
     }
 
     console.log("Creating new comment:", { commentId, postId, authorId, content });
