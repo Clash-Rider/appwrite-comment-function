@@ -126,9 +126,9 @@ export default async function main({ req, res, context }) {
         }
       }
 
-      if (!userIdArr.includes(document.authorId)) {
-        await existingComments.documents?.map((document) => {
-          try {
+      await existingComments.documents?.map((document) => {
+        try {
+          if (!userIdArr.includes(document.authorId)) {
             databases.createDocument(appwriteDatabaseId, appwriteNotificationCollectionId, 'unique()', {
               userId: document.authorId,
               type: 'replay',
@@ -144,11 +144,11 @@ export default async function main({ req, res, context }) {
               ]
             )
             userIdArr.push(document.authorId)
-          } catch (error) {
-            console.log(error);
           }
-        })
-      }
+        } catch (error) {
+          console.log(error);
+        }
+      })
     }
 
     console.log("Creating new comment:", { commentId, postId, authorId, content });
